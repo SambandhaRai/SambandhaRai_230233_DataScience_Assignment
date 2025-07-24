@@ -1,0 +1,14 @@
+# RStudio files
+.Rhistory
+.RData
+.RDataTmp*
+.Rproj.user/
+*.Rproj
+
+# Data folders
+Obtained Data/
+Cleaned Data/
+
+# System files
+.DS_Store
+Thumbs.db
