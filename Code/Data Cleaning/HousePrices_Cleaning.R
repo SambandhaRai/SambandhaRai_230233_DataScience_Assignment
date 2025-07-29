@@ -1,38 +1,31 @@
 library(tidyverse)
-library(dplyr)
 
-column_names = c(
-  "TransactionID","Price", "Date", "Postcode", "PropertyType", "OldNew",
-  "Duration", "PAON", "SAON", "Street", "Locality", "Town", "District","County",
-  "PPDCategory", "RecordStatus"
-)
+# Load and rename
+years = 2021:2024
+file_paths = paste0("Obtained Data/HousePrices/HousePrices", years, ".csv")
+columns = c("TransactionID", "Price", "DateOfTransfer", "Postcode", "PropertyType",
+             "OldOrNew", "Duration", "PAON", "SAON", "Street", "Locality",
+             "Town", "District", "County", "PPDCategoryType", "RecordStatus")
 
-# Cleaning each year's data
-HousePrices2021 = read_csv("Obtained Data/HousePrices/HousePrices2021.csv")
-colnames(HousePrices2021) = column_names
+data_list = lapply(file_paths, function(f) {
+  df = read_csv(f, show_col_types = FALSE)
+  names(df) = columns
+  df
+})
 
-HousePrices2022 = read_csv("Obtained Data/HousePrices/HousePrices2022.csv")
-colnames(HousePrices2022) = column_names
+# Combine and filter
+clean_house_prices = bind_rows(data_list) %>%
+  filter(County %in% c("SOUTH YORKSHIRE", "WEST YORKSHIRE")) %>%
+  mutate(
+    shortPostcode = sub(" .*", "", Postcode),
+    Year = substr(DateOfTransfer, 1, 4),
+    Price = as.numeric(Price)
+  ) %>%
+  select(Postcode, shortPostcode, Year, PAON, Price, Town, District, County) %>%
+  distinct() %>%
+  drop_na()
 
-HousePrices2023 = read_csv("Obtained Data/HousePrices/HousePrices2023.csv")
-colnames(HousePrices2023) = column_names
+View(clean_house_prices)
 
-HousePrices2024 = read_csv("Obtained Data/HousePrices/HousePrices2024.csv")
-colnames(HousePrices2024) = column_names
-
-# Combining all cleaned data
-HousePrices_combined = bind_rows(HousePrices2021, HousePrices2022, HousePrices2023, HousePrices2024)
-
-dir.create("Cleaned Data", recursive = TRUE, showWarnings = FALSE)
-
-write.csv(HousePrices_combined, "Cleaned Data/CombinedHousePrices.csv")
-
-# Cleaned & Filtered data
-cleanHousePrices = HousePrices_combined %>%
-  filter(County=="SOUTH YORKSHIRE"|County=="WEST YORKSHIRE") %>% 
-  mutate(shortPostcode = str_trim(substring(Postcode, 1,4))) %>% 
-  mutate(Year=substring(Date,7,10)) %>% 
-  arrange(County) %>% 
-  select(Postcode,shortPostcode,Price,Year,PropertyType)
-
-write.csv(cleanHousePrices, "Cleaned Data/cleanedHousePrices.csv", row.names = FALSE)
+# Save result
+write_csv(clean_house_prices, "Cleaned Data/cleanedHousePrices.csv")

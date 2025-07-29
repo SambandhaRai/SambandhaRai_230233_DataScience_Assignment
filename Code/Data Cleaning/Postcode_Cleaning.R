@@ -1,19 +1,22 @@
 library(tidyverse)
-library(dplyr)
 
 Town_cleaned = read_csv("Cleaned Data/Towns.csv")
-
 Postcode_LSOA = read_csv("Obtained Data/Postcode/Postcode to LSOA.csv")
 
-pattern = ' .*$'
+Postcode_LSOA = Postcode_LSOA %>%
+  select(lsoa11cd, pcds)
 
-Postcode_LSOA_Cleaned = Postcode_LSOA %>%
-  select(lsoa11cd, pcds) %>% 
-  mutate(shortPostcode = gsub(pattern,"",pcds)) %>% 
-  right_join(Town_cleaned, by = "shortPostcode")  %>% 
-  group_by(lsoa11cd) %>% 
-  select(`LSOA code` = lsoa11cd, shortPostcode, Town, District, County) 
+# Match using starts with manually (slow)
+matched_data = Town_cleaned %>%
+  rowwise() %>%
+  mutate(
+    lsoa11cd = Postcode_LSOA$lsoa11cd[which(startsWith(Postcode_LSOA$pcds, shortPostcode))[1]]
+  ) %>%
+  ungroup() %>%
+  filter(!is.na(lsoa11cd)) %>%
+  select(`LSOA code` = lsoa11cd, shortPostcode, Town, District, County)
 
-View(Postcode_LSOA_Cleaned)
+# View and save output
+View(matched_data)
 
-write.csv(Postcode_LSOA_Cleaned, "Cleaned Data/cleanedPostcode_LSOA.csv")
+write_csv(matched_data, "Cleaned Data/cleanedPostcode_LSOA.csv")

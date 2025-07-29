@@ -1,13 +1,13 @@
 library(tidyverse)
 library(dplyr)
 
-HousePrices_combined = read_csv("Cleaned Data/CombinedHousePrices.csv")
+HousePrices = read_csv("Cleaned Data/cleanedHousePrices.csv")
 
-PopulationData_raw = read_csv("Obtained Data/Population/Population2011.csv")
-PopulationData = PopulationData_raw %>% 
+PopulationData = read_csv("Obtained Data/Population/Population2011.csv")
+PopulationData = PopulationData %>%  
   mutate(shortPostcode = str_trim(substring(Postcode, 1,4))) %>% 
   group_by(shortPostcode) %>%
-  summarise_at(vars(Population), list(Population2011 = sum)) %>% 
+  summarise(Population2011 = sum(Population, na.rm = TRUE), .groups = "drop") %>% 
   mutate(Population2012 = 1.00695353132322269 * Population2011) %>%
   mutate(Population2013 = 1.00669740535540783 * Population2012) %>%
   mutate(Population2014 = 1.00736463978721671 * Population2013) %>%
@@ -22,18 +22,14 @@ PopulationData = PopulationData_raw %>%
   mutate(Population2023 = 1.004510 * Population2022) %>%
   mutate(Population2024 = 1.004220 * Population2023) %>% 
   select(shortPostcode,Population2020,Population2021,Population2022,Population2023,Population2024)
-View(PopulationData)
 
-Towns = HousePrices_combined %>%
-  filter(County == "SOUTH YORKSHIRE" | County == "WEST YORKSHIRE") %>% 
-  mutate(shortPostcode = str_trim(substring(Postcode, 1,4))) %>% 
-  left_join(PopulationData, by = "shortPostcode") %>% 
-  select(shortPostcode, Town, District, County, Population2020,
-         Population2021, Population2022, Population2023, Population2024) %>% 
+Towns = HousePrices %>%
+  left_join(PopulationData,by = "shortPostcode") %>% 
+  select(shortPostcode,Town,District,County,Population2020,Population2021,Population2022,Population2023,Population2024) %>% 
   group_by(shortPostcode) %>% 
-  filter(row_number() == 1) %>% 
-  arrange(County)
-
+  filter(row_number()==1) %>% 
+  arrange(County) %>% 
+  ungroup()
 View(Towns)
 
 write.csv(Towns, "Cleaned Data/Towns.csv")
