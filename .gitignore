@@ -8,6 +8,7 @@
 # Data folders
 Obtained Data/
 Cleaned Data/
+Graphs/
 
 # System files
 .DS_Store
