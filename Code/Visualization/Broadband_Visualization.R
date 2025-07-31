@@ -65,3 +65,4 @@ chart_south <- ggplot(south_yorkshire_town, aes(x = reorder(Town, meanDownload),
 
 print(chart_west)
 print(chart_south)
+
