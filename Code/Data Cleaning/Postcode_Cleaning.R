@@ -14,7 +14,8 @@ matched_data = Town_cleaned %>%
   ) %>%
   ungroup() %>%
   filter(!is.na(lsoa11cd)) %>%
-  select(`LSOA code` = lsoa11cd, shortPostcode, Town, District, County)
+  select(`LSOA code` = lsoa11cd, shortPostcode, Town, District, County, Population2020, Population2021,
+         Population2022, Population2023, Population2024)
 
 # View and save output
 View(matched_data)

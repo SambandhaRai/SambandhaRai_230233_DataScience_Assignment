@@ -3,8 +3,6 @@ library(tidyverse)
 # === Setup ===
 base_path = "Obtained Data/School"
 year_folders = c("School(2021-2022)", "School(2022-2023)", "School(2023-2024)")
-
-# Valid postcode prefixes in Yorkshire
 yorkshire_prefixes = c("BD", "DN", "HD", "HG", "HU", "HX", "LS", "S", "WF", "YO")
 
 # === Load and Clean Town Data ===
@@ -20,23 +18,21 @@ towns_yorkshire = towns %>%
 # === Function to Read and Clean Each Year's School Data ===
 read_clean_ks4final = function(year_folder) {
   folder_path = file.path(base_path, year_folder)
-  
-  # Search recursively inside folder_path for CSV files matching pattern
   csv_file = list.files(folder_path, pattern = "(?i)england_ks4final.*\\.csv$", full.names = TRUE, recursive = TRUE)
   
   if (length(csv_file) == 0) {
-    message(paste("No CSV found in", folder_path))
+    message(paste("❌ No CSV found in", folder_path))
     return(tibble())
   }
   
-  df = read_csv(csv_file[1], show_col_types = FALSE)  # read first matching file
+  df = read_csv(csv_file[1], show_col_types = FALSE)
+  message(paste("✅ Reading file:", csv_file[1], "with", nrow(df), "rows"))
   
-  # Pick only relevant columns present in the data
   cols_to_keep = c("LEA", "URN", "SCHNAME", "TOWN", "PCODE", "ATT8SCR")
   cols_to_keep = intersect(cols_to_keep, colnames(df))
   
   if (length(cols_to_keep) == 0) {
-    message(paste("No relevant columns found in", csv_file[1]))
+    message(paste("⚠️ No relevant columns found in", csv_file[1]))
     return(tibble())
   }
   
@@ -47,28 +43,27 @@ read_clean_ks4final = function(year_folder) {
       shortPostcode = str_extract(PCODE, "^[A-Z0-9]+") %>% str_to_upper() %>% str_trim(),
       Year = year_folder
     ) %>%
-    filter(str_sub(shortPostcode, 1, 2) %in% yorkshire_prefixes)
+    filter(str_detect(shortPostcode, paste0("^(", paste(yorkshire_prefixes, collapse = "|"), ")")))
+  
+  message(paste("🔎 Filtered", nrow(df_clean), "rows with Yorkshire postcodes"))
   
   return(df_clean)
 }
 
-# === Read All Years' Data ===
+# === Combine All Years ===
 ks4_filtered = map_dfr(year_folders, read_clean_ks4final)
 
-# === Merge with Town Data and Final Filter ===
+# === Merge with Towns ===
 combined_ks4final = ks4_filtered %>%
   left_join(towns_yorkshire, by = "shortPostcode") %>%
   filter(County %in% c("SOUTH YORKSHIRE", "WEST YORKSHIRE")) %>%
-  select(
-    LEA, URN, SCHNAME, PCODE, ATT8SCR, shortPostcode, Year,
-    Town, District, County
-  )
+  select(LEA, URN, SCHNAME, PCODE, ATT8SCR, shortPostcode, Year, Town, District, County)
 
 # === Output ===
 if (nrow(combined_ks4final) > 0) {
+  message("✅ Final merged rows:", nrow(combined_ks4final))
   View(combined_ks4final)
+  write_csv(combined_ks4final, "Cleaned Data/cleanedSchool.csv")
 } else {
-  message("No data found for South or West Yorkshire after filtering and join.")
+  message("❌ No data found after full filtering and join.")
 }
-
-write_csv(combined_ks4final, "Cleaned Data/cleanedSchool.csv")
