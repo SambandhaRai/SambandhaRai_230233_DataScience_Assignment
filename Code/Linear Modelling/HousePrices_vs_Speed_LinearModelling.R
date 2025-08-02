@@ -28,7 +28,7 @@ combined_data = left_join(avg_house_price, avg_download_speed, by = c("shortPost
 # Visualize the relationship with regression lines per county
 combined_data %>%
   ggplot(aes(x = mean_download, y = mean_price, color = County)) +
-  geom_point(alpha = 0.6) +
+  geom_point(alpha = 0.7) +
   geom_smooth(method = "lm", se = TRUE) +
   scale_y_log10() +
   labs(
