@@ -30,7 +30,7 @@ towns <- house_prices %>%
   left_join(population_data, by = "shortPostcode") %>%
   select(shortPostcode, Town, District, County, Population2020, Population2021, Population2022, Population2023, Population2024) %>%
   group_by(shortPostcode) %>%
-  slice(1) %>%       # pick first row per group, clearer than filter(row_number()==1)
+  slice(1) %>%    
   ungroup() %>%
   arrange(County)
 
